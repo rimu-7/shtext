@@ -1,0 +1,52 @@
+@import "tailwindcss";
+
+
+/* Custom scrollbar for the view page text area */
+.custom-scrollbar::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+
+.custom-scrollbar::-webkit-scrollbar-track {
+  background: #f9fafb; 
+  border-radius: 8px;
+}
+
+.custom-scrollbar::-webkit-scrollbar-thumb {
+  background: #dbeafe; 
+  border-radius: 8px;
+  border: 2px solid #f9fafb;
+}
+
+.custom-scrollbar::-webkit-scrollbar-thumb:hover {
+  background: #93c5fd; 
+}
+
+
+/* Animations for background blobs */
+@layer utilities {
+  .animate-blob {
+    animation: blob 7s infinite;
+  }
+  .animation-delay-2000 {
+    animation-delay: 2s;
+  }
+  .animation-delay-4000 {
+    animation-delay: 4s;
+  }
+}
+
+@keyframes blob {
+  0% {
+    transform: translate(0px, 0px) scale(1);
+  }
+  33% {
+    transform: translate(30px, -50px) scale(1.1);
+  }
+  66% {
+    transform: translate(-20px, 20px) scale(0.9);
+  }
+  100% {
+    transform: translate(0px, 0px) scale(1);
+  }
+}
