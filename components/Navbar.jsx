@@ -6,78 +6,88 @@ import { accessSnippet } from "@/utils/action";
 import { useActionState, useEffect } from "react";
 import { useFormStatus } from "react-dom";
 import { toast } from "sonner";
+import { ModeToggle } from "./ModeToggle";
 
-// 1. Local definition of the button to avoid importing from Hero
+// Shadcn imports
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+
 function SearchButton() {
   const { pending } = useFormStatus();
+
   return (
-    <button
+    <Button
       type="submit"
+      variant="ghost"
+      className="h-10 rounded-none border-2 border-l-0 border-black dark:border-white bg-accent text-accent-foreground px-3 hover:bg-accent/80 transition-colors"
       disabled={pending}
-      className="px-3 py-2 bg-gray-100 text-gray-600 hover:text-gray-900 border border-l-0 border-gray-300 rounded-r-lg hover:bg-gray-200 disabled:opacity-70 transition-colors flex items-center justify-center min-w-[40px]"
     >
       {pending ? (
         <Loader2 className="h-4 w-4 animate-spin" />
       ) : (
         <Search className="h-4 w-4" />
       )}
-    </button>
+    </Button>
   );
 }
 
 export default function Navbar() {
   const [state, action] = useActionState(accessSnippet, null);
 
-  // 2. Handle Search Errors (e.g., "Snippet not found")
   useEffect(() => {
-    if (state && !state.success) {
-      toast.error(state.message);
-    }
+    if (state && !state.success) toast.error(state.message);
   }, [state]);
 
   return (
-    <nav className="sticky top-0 z-50 w-full border-b border-gray-100 bg-white/80 backdrop-blur-md">
+    <nav className="sticky top-0 z-50 w-full border-b-2 border-black dark:border-white bg-background/95 backdrop-blur-sm">
       <div className="max-w-4xl mx-auto px-4 sm:px-6 h-16 flex items-center justify-between gap-4">
-        {/* --- LEFT: Logo --- */}
+        {/* --- Logo --- */}
         <Link
           href="/"
-          className="flex items-center gap-2 hover:opacity-80 transition-opacity flex-shrink-0"
+          className="group flex items-center gap-2 transition-transform active:scale-95 shrink-0"
         >
-          <div className="p-1.5 bg-gray-900 rounded-lg shadow-sm">
-            <ShieldCheck className="h-5 w-5 text-white" />
+          <div className="p-1.5 bg-primary border-2 border-black dark:border-white shadow-[2px_2px_0_0_rgba(0,0,0,1)] dark:shadow-[2px_2px_0_0_rgba(255,255,255,1)] group-hover:shadow-none group-hover:dark:shadow-none group-hover:translate-x-[2px] group-hover:translate-y-[2px] transition-all">
+            <ShieldCheck className="h-5 w-5 text-primary-foreground" />
           </div>
-          <span className="font-semibold hidden md:block text-gray-900 tracking-tight text-lg hidden sm:block">
-            SecureSnippet
+          <span className="font-black text-xl tracking-tight hidden sm:block">
+            Sh...TEXT
           </span>
         </Link>
 
-        {/* --- MIDDLE: Search Bar (Hidden on Mobile) --- */}
-       <div className="flex-1 max-w-sm ">
-          <form action={action} className="w-full">
-            <div className="flex rounded-md">
-              <input
-                type="text"
-                name="accessCode"
-                placeholder="Enter PIN..."
-                className="block w-full rounded-l-lg rounded-r-xs border focus:outline-blue-500 border-gray-400 sm:text-sm py-2 px-3 placeholder:text-gray-400"
-                required
-              />
-              <SearchButton />
-            </div>
+        {/* --- Search Bar --- */}
+        <div className="flex-1 max-w-sm mx-4">
+          <form action={action} className="flex w-full relative group">
+            <Input
+              type="text"
+              name="accessCode"
+              placeholder="Enter PIN..."
+              // Fixed: Focus shadow is now white in dark mode
+              className="h-10 rounded-none border-2 border-black dark:border-white bg-background focus-visible:ring-0 focus-visible:shadow-[4px_4px_0_0_rgba(0,0,0,1)] dark:focus-visible:shadow-[4px_4px_0_0_rgba(255,255,255,1)] transition-all font-mono placeholder:text-muted-foreground/70"
+              required
+            />
+            <SearchButton />
           </form>
         </div>
 
-        {/* --- RIGHT: Actions --- */}
-        <div className=" hidden md:block items-center gap-2 sm:gap-4">
-          {/* Create New Button */}
-          <Link
-            href="/"
-            className="inline-flex  items-center gap-2 px-4 py-2 rounded-lg bg-gray-900 text-white text-sm font-medium hover:bg-gray-800 transition-all shadow-sm ring-1 ring-gray-900"
-          >
-            <Plus className="h-4 w-4" />
-            <span className="hidden sm:inline">New Snippet</span>
-            <span className="sm:hidden">New</span>
+        {/* --- Right actions --- */}
+        <div className="hidden md:flex items-center gap-4">
+          {/* New Snippet Button */}
+          <Link href="/">
+            <Button
+              variant="default"
+              // Fixed: Added dark mode white shadow
+              className="h-10 rounded-none border-2 border-black dark:border-white shadow-[4px_4px_0_0_rgba(0,0,0,1)] dark:shadow-[4px_4px_0_0_rgba(255,255,255,1)] hover:shadow-none hover:dark:shadow-none hover:translate-x-[4px] hover:translate-y-[4px] transition-all flex items-center gap-2 font-bold bg-primary text-primary-foreground"
+            >
+              <Plus className="h-4 w-4" />
+              <span className="hidden sm:inline">New Snippet</span>
+            </Button>
           </Link>
+
+          {/* Dark/Light Toggle */}
+          {/* Fixed: Wrapper now has correct dark mode shadow (white) instead of accent color */}
+          <div className="border-2 border-black dark:border-white shadow-[4px_4px_0_0_rgba(0,0,0,1)] dark:shadow-[4px_4px_0_0_rgba(255,255,255,1)] hover:shadow-none hover:dark:shadow-none hover:translate-x-[4px] hover:translate-y-[4px] transition-all bg-card">
+            <ModeToggle />
+          </div>
         </div>
       </div>
     </nav>

@@ -2,6 +2,7 @@ import Link from "next/link";
 import connectDB from "@/utils/db";
 import Snippet from "@/utils/Snippet";
 import SnippetClient from "./SnippetClient";
+import { ArrowLeft, FileQuestion } from "lucide-react";
 
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
@@ -21,7 +22,6 @@ async function getSnippet(slug) {
   return {
     isProtected,
     expireAt: new Date(snippet.expireAt).toISOString(),
-    // ✅ hide content if protected
     content: isProtected ? null : snippet.content,
   };
 }
@@ -32,25 +32,32 @@ export default async function ViewSnippet({ params }) {
 
   if (!data) {
     return (
-      <div className="min-h-screen flex flex-col items-center justify-center bg-white p-4 text-center">
-        <h1 className="text-2xl font-semibold text-gray-900 mb-2">
-          Snippet not found
-        </h1>
-        <p className="text-gray-500 mb-6 max-w-sm">
-          This link is invalid or the snippet has expired.
-        </p>
-        <Link
-          href="/"
-          className="px-5 py-2.5 bg-gray-900 text-white rounded-lg font-medium hover:bg-gray-800 transition"
-        >
-          Create New
-        </Link>
+      <div className="min-h-[80vh] flex flex-col items-center justify-center p-4">
+        <div className="max-w-md w-full bg-card border-2 border-black dark:border-white shadow-[8px_8px_0_0_rgba(0,0,0,1)] dark:shadow-[8px_8px_0_0_rgba(255,255,255,1)] p-8 text-center">
+          <div className="mx-auto w-16 h-16 bg-muted border-2 border-black dark:border-white mb-6 flex items-center justify-center">
+            <FileQuestion className="h-8 w-8 text-foreground" />
+          </div>
+          
+          <h1 className="text-3xl font-black text-foreground mb-2">
+            Snippet not found
+          </h1>
+          <p className="text-muted-foreground font-medium font-mono text-sm mb-8">
+            This link is invalid or the snippet has vanished into the void.
+          </p>
+          
+          <Link
+            href="/"
+            className="h-10 rounded-none justify-center border-2 border-black dark:border-white shadow-[4px_4px_0_0_rgba(0,0,0,1)] dark:shadow-[4px_4px_0_0_rgba(255,255,255,1)] hover:shadow-none hover:dark:shadow-none hover:translate-x-[4px] hover:translate-y-[4px] transition-all flex items-center gap-2 font-bold bg-primary text-primary-foreground"
+          >
+            <ArrowLeft className="mr-2 h-4 w-4" /> Create New Snippet
+          </Link>
+        </div>
       </div>
     );
   }
 
   return (
-    <main className="min-h-screen bg-gray-50/50 flex flex-col items-center pt-12 sm:pt-24 p-4">
+    <main className="min-h-screen bg-background flex flex-col items-center pt-12 sm:pt-20 p-4 pb-20">
       <SnippetClient initialData={data} slug={slug} />
     </main>
   );

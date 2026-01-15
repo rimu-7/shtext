@@ -3,45 +3,46 @@ import { ShieldCheck, Github } from "lucide-react";
 
 export default function Footer() {
   return (
-    <footer className="w-full border-t border-gray-100 bg-white mt-auto">
+    <footer className="w-full border-t-2 border-black dark:border-white bg-background mt-auto">
       <div className="max-w-4xl mx-auto px-4 sm:px-6 py-8">
         <div className="flex flex-col md:flex-row justify-between items-center gap-6 md:gap-4">
-          
           {/* Brand / Logo Area */}
-          <div className="flex items-center gap-2">
-            <div className="p-1.5 bg-gray-50 rounded-md border border-gray-200">
-               <ShieldCheck className="h-5 w-5 text-gray-700" />
+          <Link
+            href="/"
+            className="group flex items-center gap-2 transition-transform active:scale-95 shrink-0"
+          >
+            <div className="p-1.5 bg-primary border-2 border-black dark:border-white shadow-[2px_2px_0_0_rgba(0,0,0,1)] dark:shadow-[2px_2px_0_0_rgba(255,255,255,1)] group-hover:shadow-none group-hover:dark:shadow-none group-hover:translate-x-[2px] group-hover:translate-y-[2px] transition-all">
+              <ShieldCheck className="h-5 w-5 text-primary-foreground" />
             </div>
-            <span className="font-semibold text-gray-900 tracking-tight text-sm">
-              SHTEXT
+            <span className="font-black text-xl tracking-tight hidden sm:block">
+              Sh...TEXT
             </span>
-          </div>
+          </Link>
 
           {/* Copyright Text */}
-          <div className="text-xs sm:text-sm text-gray-500 order-3 md:order-2">
+          <div className="text-xs font-mono font-bold text-muted-foreground order-3 md:order-2">
             &copy; {new Date().getFullYear()} • Encrypted & Transient
           </div>
 
           {/* Navigation Links */}
-          <div className="flex items-center gap-6 text-sm font-medium order-2 md:order-3">
-             <Link 
-              href="/privacy-policy" 
-              className="text-gray-500 hover:text-gray-900 transition-colors hover:underline underline-offset-4"
+          <div className="flex items-center gap-6 text-sm font-bold order-2 md:order-3">
+            <Link
+              href="/privacy-policy"
+              className="text-foreground hover:text-primary transition-colors hover:underline decoration-2 underline-offset-4"
             >
               Privacy Policy
             </Link>
-            
-            <a 
-              href="https://github.com/rimu-7/snippet-share" 
-              target="_blank" 
+
+            <a
+              href="https://github.com/rimu-7/snippet-share"
+              target="_blank"
               rel="noreferrer"
-              className="text-gray-400 hover:text-gray-900 transition-colors"
+              className="group p-2 bg-card border-2 border-black dark:border-white shadow-[4px_4px_0_0_rgba(0,0,0,1)] dark:shadow-[4px_4px_0_0_rgba(255,255,255,1)] dark:hover:shadow-none hover:translate-x-[4px] hover:translate-y-[4px] transition-all"
               aria-label="GitHub"
             >
-              <Github className="h-5 w-5" />
+              <Github className="h-5 w-5 text-foreground group-hover:text-primary transition-colors" />
             </a>
           </div>
-
         </div>
       </div>
     </footer>
