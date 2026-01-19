@@ -1,8 +1,9 @@
 "use client";
 
-import { useState } from "react";
-import { useRouter } from "next/navigation";
+import { useActionState, useEffect, useState } from "react";
+import { createSnippet } from "@/utils/action";
 import { toast } from "sonner";
+import { useFormStatus } from "react-dom";
 import {
   Loader2,
   ArrowRight,
@@ -10,246 +11,151 @@ import {
   Clock,
   Hash,
   Shield,
-  FileText,
-  Globe,
-  CheckCircle2,
 } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Label } from "@/components/ui/label";
-import Container from "./Container";
 
-export default function Hero() {
-  const router = useRouter();
-  const [loading, setLoading] = useState(false);
-  const [formData, setFormData] = useState({
-    text: "",
-    customSlug: "",
-    duration: "15m",
-    protection: "public",
-    password: "",
-  });
-
-  const handleChange = (key, value) => {
-    setFormData((prev) => ({ ...prev, [key]: value }));
-  };
-
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-    setLoading(true);
-
-    try {
-      const res = await fetch("/api/snippet/create", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          "x-api-key": process.env.NEXT_PUBLIC_WEB_API_KEY || "",
-        },
-        body: JSON.stringify({
-          text: formData.text,
-          duration: formData.duration,
-          customSlug: formData.customSlug,
-          password:
-            formData.protection === "password" ? formData.password : null,
-        }),
-      });
-
-      const data = await res.json();
-
-      if (!res.ok || !data.success) {
-        toast.error(data.message || "Failed to create snippet");
-        setLoading(false);
-        return;
-      }
-
-      toast.success("Snippet created!");
-      router.push(`/${data.slug}?new=1`);
-    } catch (error) {
-      toast.error("Something went wrong.");
-      setLoading(false);
-    }
-  };
+// 1. Separate Submit Button Component for "Pending" state
+function SubmitButton() {
+  const { pending } = useFormStatus();
 
   return (
-    <Container>
-      <div className="w-full py-10 relative z-10">
-        <div className="text-center mb-8">
-          <h1 className="text-5xl md:text-6xl font-black tracking-tighter text-foreground uppercase">
-            Sh...
-            <span className="bg-primary text-white px-2 dark:text-black">
-              TEXT
-            </span>
+    <Button
+      type="submit"
+      disabled={pending}
+      className="h-10 w-full md:w-auto rounded-none border-2 border-black dark:border-white shadow-[4px_4px_0_0_rgba(0,0,0,1)] dark:shadow-[4px_4px_0_0_rgba(255,255,255,1)] hover:translate-x-[2px] hover:translate-y-[2px] hover:shadow-[2px_2px_0_0_rgba(0,0,0,1)] hover:dark:shadow-none active:translate-x-[4px] active:translate-y-[4px] active:shadow-none transition-all flex items-center justify-center gap-2 font-bold bg-primary text-primary-foreground"
+    >
+      {pending ? <Loader2 className="h-4 w-4 animate-spin" /> : "Create Snippet"}
+      {!pending && <ArrowRight className="h-4 w-4" />}
+    </Button>
+  );
+}
+
+export default function Hero() {
+  // 2. Hook up the Server Action
+  const [state, formAction] = useActionState(createSnippet, null);
+  
+  // State for conditional rendering (Protection field)
+  const [protection, setProtection] = useState("public");
+
+  // 3. Watch for Errors
+  useEffect(() => {
+    if (state && !state.success) {
+      toast.error(state.message);
+    }
+  }, [state]);
+
+  return (
+    <main className="min-h-[85vh] flex flex-col items-center justify-center p-4 md:p-8 bg-background relative overflow-hidden">
+      <div className="w-full max-w-2xl relative z-10">
+        
+        <div className="text-center mb-8 md:mb-10 space-y-3 md:space-y-4">
+          <h1 className="text-4xl sm:text-5xl md:text-6xl font-black tracking-tight text-foreground drop-shadow-[4px_4px_0_var(--shadow-color)]">
+            Sh...TEXT
           </h1>
+          <p className="text-muted-foreground font-medium font-mono text-sm md:text-lg max-w-xs sm:max-w-lg mx-auto">
+            Paste content. Set PIN. Share. <br className="hidden sm:block" />
+            It vanishes automatically.
+          </p>
         </div>
 
-        {/* MAIN FORM CONTAINER */}
-        <div className="bg-background border-2 border-black dark:border-white p-6 md:p-8 shadow-[8px_8px_0_0_rgba(0,0,0,1)] dark:shadow-[8px_8px_0_0_rgba(255,255,255,1)]">
-          <form onSubmit={handleSubmit} className="space-y-8">
-            {/* TEXT INPUT */}
-            <div className="space-y-3">
-              <Label
-                htmlFor="text"
-                className="text-base font-black uppercase flex items-center gap-2"
-              >
-                <FileText className="w-4 h-4" /> 01. Content
-              </Label>
+        <div className="bg-card border-2 border-border p-5 md:p-8 shadow-md">
+          {/* 4. Use 'action' instead of 'onSubmit' */}
+          <form action={formAction} className="space-y-5 md:space-y-6">
+            
+            <div className="space-y-2">
+              <Label htmlFor="text" className="text-base font-bold">Content</Label>
               <Textarea
                 id="text"
+                name="text" // 👈 'name' is required for Server Actions
                 required
-                value={formData.text}
-                onChange={(e) => handleChange("text", e.target.value)}
-                placeholder="Paste sensitive data here..."
-                // NOTE: rounded-none creates the outline look
-                className="min-h-[200px] resize-y rounded-none border-2 border-black dark:border-white focus-visible:ring-0 focus-visible:outline-none focus-visible:shadow-[4px_4px_0_0_rgba(0,0,0,1)] dark:focus-visible:shadow-[4px_4px_0_0_rgba(255,255,255,1)] transition-all p-4 font-mono text-base"
+                placeholder="Write your sensitive content here..."
+                className="min-h-[150px] md:min-h-[200px] w-full resize-y font-mono text-base bg-background border-2 border-input focus-visible:ring-0 focus-visible:border-primary shadow-[4px_4px_0_0_rgba(0,0,0,1)] dark:shadow-[4px_4px_0_0_rgba(255,255,255,1)] transition-all"
               />
             </div>
 
-            {/* GRID SECTION */}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 md:gap-8">
-              {/* SLUG INPUT */}
-              <div className="space-y-3">
-                <Label className="text-base font-black uppercase flex items-center gap-2">
-                  <Hash className="w-4 h-4" /> 02. Custom Link
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-5 md:gap-6">
+              
+              <div className="space-y-2">
+                <Label className="flex items-center gap-2 font-bold">
+                  <Hash className="h-4 w-4" /> Custom PIN (Optional)
                 </Label>
                 <Input
-                  value={formData.customSlug}
-                  onChange={(e) => handleChange("customSlug", e.target.value)}
-                  placeholder="e.g. project-x"
-                  // HEIGHT NORMALIZATION: h-14
-                  className="h-14 rounded-none border-2 border-black dark:border-white focus-visible:ring-0 focus-visible:outline-none focus-visible:shadow-[4px_4px_0_0_rgba(0,0,0,1)] dark:focus-visible:shadow-[4px_4px_0_0_rgba(255,255,255,1)] transition-all font-mono"
+                  name="customSlug"
+                  placeholder="e.g. project-alpha"
+                  className="h-10 w-full border-2 border-input focus-visible:ring-0 focus-visible:border-primary shadow-[4px_4px_0_0_rgba(0,0,0,1)] dark:shadow-[4px_4px_0_0_rgba(255,255,255,1)] transition-all"
                 />
               </div>
 
-              {/* DURATION SELECT */}
-              <div className="space-y-3">
-                <Label className="text-base font-black uppercase flex items-center gap-2">
-                  <Clock className="w-4 h-4" /> 03. Auto-Delete
+              <div className="space-y-2">
+                <Label className="flex items-center gap-2 font-bold">
+                  <Clock className="h-4 w-4" /> Expiration
                 </Label>
-                <Select
-                  value={formData.duration}
-                  onValueChange={(val) => handleChange("duration", val)}
-                >
-                  {/* Trigger with h-14 fix and flex centering */}
-                  <SelectTrigger className="h-14 w-full rounded-none border-2 border-black dark:border-white focus:ring-0 focus:shadow-[4px_4px_0_0_rgba(0,0,0,1)] dark:focus:shadow-[4px_4px_0_0_rgba(255,255,255,1)] transition-all flex items-center">
+                <Select name="duration" defaultValue="15m">
+                  <SelectTrigger className="h-10 w-full border-2 border-input focus:ring-0 focus:border-primary shadow-[4px_4px_0_0_rgba(0,0,0,1)] dark:shadow-[4px_4px_0_0_rgba(255,255,255,1)] transition-all">
                     <SelectValue placeholder="Select duration" />
                   </SelectTrigger>
-
-                  <SelectContent
-                    className="
-                    rounded-none border-2 border-black dark:border-white 
-                    
-                    /* 1. Target any child with role='option' that is focused (hovered) */
-                    [&_[role=option]:focus]:bg-primary 
-                    [&_[role=option]:focus]:text-primary-foreground
-                    
-                    /* 2. Target the currently selected item */
-                    [&_[role=option][data-state=checked]]:bg-primary 
-                    [&_[role=option][data-state=checked]]:text-primary-foreground
-                  "
-                  >
+                  <SelectContent className="border-2 border-black">
                     <SelectItem value="15m">15 Minutes</SelectItem>
                     <SelectItem value="30m">30 Minutes</SelectItem>
                     <SelectItem value="1h">1 Hour</SelectItem>
+                    <SelectItem value="2h">2 Hours</SelectItem>
+                    <SelectItem value="6h">6 Hours</SelectItem>
+                    <SelectItem value="12h">12 Hours</SelectItem>
                     <SelectItem value="24h">24 Hours</SelectItem>
                     <SelectItem value="7d">7 Days</SelectItem>
+                    <SelectItem value="15d">15 Days</SelectItem>
                     <SelectItem value="30d">30 Days</SelectItem>
+                    <SelectItem value="forever">Forever</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
 
-              {/* PROTECTION SELECTOR */}
-              <div className="space-y-3 md:col-span-2">
-                <Label className="text-base font-black uppercase flex items-center gap-2">
-                  <Shield className="w-4 h-4" /> 04. Security Level
+              <div className="space-y-2 md:col-span-2">
+                <Label className="flex items-center gap-2 font-bold">
+                  <Shield className="h-4 w-4" /> Protection
                 </Label>
-
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-8">
-                  {/* OPTION 1: PUBLIC (RED) */}
-                  <div
-                    onClick={() => handleChange("protection", "public")}
-                    className={`
-                        h-14 cursor-pointer border-2 flex items-center justify-center gap-3 transition-all rounded-none
-                        ${
-                          formData.protection === "public"
-                            ? "border-red-600 bg-red-50 text-red-600 shadow-[4px_4px_0_0_#dc2626] dark:bg-red-900/20"
-                            : "border-black/20 dark:border-white/20 hover:border-red-600/50 text-muted-foreground"
-                        }
-                      `}
-                  >
-                    <Globe className="w-5 h-5" />
-                    <span className="font-bold uppercase tracking-wider">
-                      Public
-                    </span>
-                  </div>
-
-                  {/* OPTION 2: PASSWORD (GREEN) */}
-                  <div
-                    onClick={() => handleChange("protection", "password")}
-                    className={`
-                        h-14 cursor-pointer border-2 flex items-center justify-center gap-3 transition-all rounded-none
-                        ${
-                          formData.protection === "password"
-                            ? "border-green-600 bg-green-50 text-green-600 shadow-[4px_4px_0_0_#16a34a] dark:bg-green-900/20"
-                            : "border-black/20 dark:border-white/20 hover:border-green-600/50 text-muted-foreground"
-                        }
-                      `}
-                  >
-                    <Lock className="w-5 h-5" />
-                    <span className="font-bold uppercase tracking-wider">
-                      Password
-                    </span>
-                  </div>
-                </div>
+                <Select
+                  name="protection"
+                  value={protection}
+                  onValueChange={setProtection}
+                >
+                  <SelectTrigger className="h-10 w-full border-2 border-input focus:ring-0 focus:border-primary shadow-[4px_4px_0_0_rgba(0,0,0,1)] dark:shadow-[4px_4px_0_0_rgba(255,255,255,1)] transition-all">
+                    <SelectValue placeholder="Select protection" />
+                  </SelectTrigger>
+                  <SelectContent className="border-2 border-black">
+                    <SelectItem value="public">Public (no password)</SelectItem>
+                    <SelectItem value="password">Password Protected</SelectItem>
+                  </SelectContent>
+                </Select>
               </div>
 
-              {/* PASSWORD FIELD (Only shows if protected) */}
-              {formData.protection === "password" && (
-                <div className="space-y-3 md:col-span-2 animate-in fade-in slide-in-from-top-2">
-                  <Label className="text-base font-black uppercase flex items-center gap-2 text-green-600">
-                    <CheckCircle2 className="w-4 h-4" /> Set Password
+              {protection === "password" && (
+                <div className="space-y-2 md:col-span-2 animate-in fade-in slide-in-from-top-2 duration-300">
+                  <Label className="flex items-center gap-2 font-bold">
+                    <Lock className="h-4 w-4" /> Password
                   </Label>
                   <Input
                     type="password"
+                    name="password"
                     required
-                    value={formData.password}
-                    onChange={(e) => handleChange("password", e.target.value)}
-                    placeholder="Enter access code..."
-                    // Green accent on focus to match the theme
-                    className="h-14 rounded-none border-2 border-black dark:border-white focus-visible:ring-0 focus-visible:outline-none focus-visible:border-green-600 focus-visible:shadow-[4px_4px_0_0_#16a34a] transition-all"
+                    placeholder="Enter a password"
+                    className="h-10 w-full border-2 border-input focus-visible:ring-0 focus-visible:border-primary shadow-[4px_4px_0_0_rgba(0,0,0,1)] dark:shadow-[4px_4px_0_0_rgba(255,255,255,1)] transition-all"
                   />
                 </div>
               )}
             </div>
 
-            {/* SUBMIT BUTTON */}
-            <div className="pt-4">
-              <Button
-                type="submit"
-                disabled={loading}
-                // Height 14 to match inputs
-                className="h-14 w-full px-3 sm:px-4 text-3xl rounded-none border-2 border-black dark:border-white shadow-[4px_4px_0_0_rgba(0,0,0,1)] dark:shadow-[4px_4px_0_0_rgba(255,255,255,1)] hover:shadow-none hover:dark:shadow-none hover:translate-x-[4px] hover:translate-y-[4px] transition-all flex items-center gap-2 font-bold bg-primary text-primary-foreground"
-              >
-                {loading ? (
-                  <Loader2 className="h-10 w-10 animate-spin" />
-                ) : (
-                  <>
-                    Create Snippet 
-                  </>
-                )}
-              </Button>
+            <div className="pt-4 flex w-full md:justify-end">
+              <SubmitButton />
             </div>
           </form>
         </div>
       </div>
-    </Container>
+    </main>
   );
 }
