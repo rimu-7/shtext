@@ -2,14 +2,14 @@
 
 import { nanoid } from "nanoid";
 import { redirect } from "next/navigation";
-import { headers } from "next/headers";
+import { headers } from "next/headers"; 
 import connectDB from "@/utils/db";
 import Snippet from "@/utils/Snippet";
 import bcrypt from "bcryptjs";
 import { encrypt } from "@/utils/crypto";
 import { ratelimit } from "@/utils/ratelimit";
 
-// Map durations to milliseconds
+// Duration Map
 const DURATION_MAP = {
   "15m": 15 * 60 * 1000,
   "30m": 30 * 60 * 1000,
@@ -25,63 +25,41 @@ const DURATION_MAP = {
 };
 
 export async function createSnippet(prevState, formData) {
-  // 1. Rate Limiting (Prevent Spam)
+  // 1. Rate Limiting (IP Based - No Key Needed for Website)
   const ip = (await headers()).get("x-forwarded-for") || "unknown";
-  const { success: limitSuccess } = await ratelimit.limit(`create_action_${ip}`);
+  const { success: limitSuccess } = await ratelimit.limit(`create_web_${ip}`);
 
   if (!limitSuccess) {
-    return {
-      success: false,
-      message: "Too many requests. Please wait a moment.",
-      inputs: Object.fromEntries(formData),
-    };
+    return { success: false, message: "Too many requests. Please slow down." };
   }
 
+  // 2. Extract Data
   const text = formData.get("text");
   const durationKey = formData.get("duration");
   const customSlug = formData.get("customSlug");
   const protection = formData.get("protection");
   const passwordRaw = formData.get("password");
 
-  const returnWithError = (message) => ({
-    success: false,
-    message,
-    inputs: {
-      text: typeof text === "string" ? text : "",
-      customSlug: typeof customSlug === "string" ? customSlug : "",
-      duration: typeof durationKey === "string" ? durationKey : "15m",
-      protection: typeof protection === "string" ? protection : "public",
-    },
-  });
-
-  // 2. Validate Text
+  // 3. Validation
   if (!text || typeof text !== "string" || text.trim().length === 0) {
-    return returnWithError("Please enter some text to share.");
+    return { success: false, message: "Content is required." };
   }
   if (text.length > 100000) {
-    return returnWithError("Text is too long. Please reduce size.");
+    return { success: false, message: "Text is too long (Max 100KB)." };
   }
 
-  // 3. Validate Duration
-  if (!durationKey || !DURATION_MAP.hasOwnProperty(durationKey)) {
-    return returnWithError("Invalid expiration duration selected.");
-  }
-
-  const ms = DURATION_MAP[durationKey];
+  const ms = DURATION_MAP[durationKey] || DURATION_MAP["15m"];
   const expireAt = ms ? new Date(Date.now() + ms) : null;
 
   await connectDB();
 
-  // 4. Handle Slug
+  // 4. Slug Logic
   let slug;
   if (customSlug && typeof customSlug === "string" && customSlug.trim() !== "") {
     slug = customSlug.trim().replace(/[^a-zA-Z0-9-_]/g, "");
-    if (!slug) return returnWithError("Custom PIN is invalid. Use letters/numbers/-/_ only.");
-
     const existing = await Snippet.findOne({ slug }).lean();
-    if (existing) return returnWithError("This Custom PIN is already taken.");
+    if (existing) return { success: false, message: "Custom PIN is already taken." };
   } else {
-    // Ensure uniqueness for random IDs
     let isUnique = false;
     while (!isUnique) {
       slug = nanoid(6);
@@ -90,20 +68,15 @@ export async function createSnippet(prevState, formData) {
     }
   }
 
-  // 5. Password Logic
-  const isProtected = protection === "password";
-  const password = typeof passwordRaw === "string" ? passwordRaw.trim() : "";
+  // 5. Password & Encryption
+  const hashedPassword = (protection === "password" && passwordRaw) 
+    ? await bcrypt.hash(passwordRaw, 10) 
+    : null;
 
-  if (isProtected && !password) {
-    return returnWithError("Password is required when protection is enabled.");
-  }
+  const encryptedContent = encrypt(text);
 
-  const hashedPassword = isProtected ? await bcrypt.hash(password, 10) : null;
-
-  // 6. ENCRYPTION & Save
+  // 6. Save
   try {
-    const encryptedContent = encrypt(text); // 👈 Encrypt before saving
-
     await Snippet.create({
       content: encryptedContent,
       slug,
@@ -111,50 +84,52 @@ export async function createSnippet(prevState, formData) {
       expireAt,
     });
   } catch (error) {
-    console.error("Error creating snippet:", error);
-    return returnWithError("Database error. Please try again later.");
+    console.error("DB Error:", error);
+    return { success: false, message: "Database error." };
   }
 
-  // Redirect to the new snippet page
+  // 7. Redirect (This acts as the "Success" response)
   redirect(`/${slug}?new=1`);
 }
 
+// ... existing accessSnippet function ...
 export async function accessSnippet(prevState, formData) {
-  // 1. Rate Limiting
-  const ip = (await headers()).get("x-forwarded-for") || "unknown";
-  const { success: limitSuccess } = await ratelimit.limit(`access_action_${ip}`);
-
-  if (!limitSuccess) {
-    return { success: false, message: "Too many attempts. Please slow down." };
-  }
-
-  const code = formData.get("accessCode");
-
-  if (!code || typeof code !== "string" || code.trim() === "") {
-    return { success: false, message: "Please enter a valid PIN or Code." };
-  }
-
-  const cleanCode = code.trim();
-
-  try {
-    await connectDB();
-    const snippet = await Snippet.findOne({ slug: cleanCode }).lean();
-
-    if (!snippet) {
-      return { success: false, message: "Snippet not found. Check your PIN." };
+    // ... keep your existing accessSnippet logic ...
+    // (It's already correct)
+    const ip = (await headers()).get("x-forwarded-for") || "unknown";
+    const { success: limitSuccess } = await ratelimit.limit(`access_action_${ip}`);
+  
+    if (!limitSuccess) {
+      return { success: false, message: "Too many attempts. Please slow down." };
     }
-
-    // Manual Expiry Check
-    if (snippet.expireAt && new Date(snippet.expireAt) <= new Date()) {
-      // It's expired but mongo hasn't deleted it yet. Treat as gone.
-      return { success: false, message: "Snippet not found or expired." };
+  
+    const code = formData.get("accessCode");
+  
+    if (!code || typeof code !== "string" || code.trim() === "") {
+      return { success: false, message: "Please enter a valid PIN or Code." };
     }
-
-    // If found, redirect to the page
-    redirect(`/${cleanCode}`);
-  } catch (error) {
-    if (error?.message === "NEXT_REDIRECT") throw error;
-    console.error("Access error:", error);
-    return { success: false, message: "An error occurred. Please try again." };
-  }
+  
+    const cleanCode = code.trim();
+  
+    try {
+      await connectDB();
+      const snippet = await Snippet.findOne({ slug: cleanCode }).lean();
+  
+      if (!snippet) {
+        return { success: false, message: "Snippet not found. Check your PIN." };
+      }
+  
+      // Manual Expiry Check
+      if (snippet.expireAt && new Date(snippet.expireAt) <= new Date()) {
+        // It's expired but mongo hasn't deleted it yet. Treat as gone.
+        return { success: false, message: "Snippet not found or expired." };
+      }
+  
+      // If found, redirect to the page
+      redirect(`/${cleanCode}`);
+    } catch (error) {
+      if (error?.message === "NEXT_REDIRECT") throw error;
+      console.error("Access error:", error);
+      return { success: false, message: "An error occurred. Please try again." };
+    }
 }
