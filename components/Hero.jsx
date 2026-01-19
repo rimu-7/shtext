@@ -56,10 +56,15 @@ export default function Hero() {
   return (
     <Container>
       <div className="w-full relative z-10">
-        <div className="text-center mb-8 md:mb-10 space-y-3 md:space-y-4">
-          <h1 className="text-4xl sm:text-5xl md:text-6xl font-black tracking-tight text-foreground drop-shadow-[4px_4px_0_var(--shadow-color)]">
-            Sh...TEXT
+        <div className="text-center my-8 md:mb-10 space-y-3 md:space-y-4">
+          <div className="text-center mb-8">
+          <h1 className="text-5xl md:text-6xl font-black tracking-tighter text-foreground uppercase">
+            Sh...
+            <span className="bg-primary text-white px-2 dark:text-black">
+              TEXT
+            </span>
           </h1>
+        </div>
           <p className="text-muted-foreground font-medium font-mono text-sm md:text-lg max-w-xs sm:max-w-lg mx-auto">
             Paste content. Set PIN. Share. <br className="hidden sm:block" />
             It vanishes automatically.
