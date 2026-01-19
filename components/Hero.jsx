@@ -4,20 +4,20 @@ import { useActionState, useEffect, useState } from "react";
 import { createSnippet } from "@/utils/action";
 import { toast } from "sonner";
 import { useFormStatus } from "react-dom";
-import {
-  Loader2,
-  ArrowRight,
-  Lock,
-  Clock,
-  Hash,
-  Shield,
-} from "lucide-react";
+import { Loader2, ArrowRight, Lock, Clock, Hash, Shield } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { Label } from "@/components/ui/label";
+import Container from "./Container";
 
 // 1. Separate Submit Button Component for "Pending" state
 function SubmitButton() {
@@ -29,7 +29,11 @@ function SubmitButton() {
       disabled={pending}
       className="h-10 w-full md:w-auto rounded-none border-2 border-black dark:border-white shadow-[4px_4px_0_0_rgba(0,0,0,1)] dark:shadow-[4px_4px_0_0_rgba(255,255,255,1)] hover:translate-x-[2px] hover:translate-y-[2px] hover:shadow-[2px_2px_0_0_rgba(0,0,0,1)] hover:dark:shadow-none active:translate-x-[4px] active:translate-y-[4px] active:shadow-none transition-all flex items-center justify-center gap-2 font-bold bg-primary text-primary-foreground"
     >
-      {pending ? <Loader2 className="h-4 w-4 animate-spin" /> : "Create Snippet"}
+      {pending ? (
+        <Loader2 className="h-4 w-4 animate-spin" />
+      ) : (
+        "Create Snippet"
+      )}
       {!pending && <ArrowRight className="h-4 w-4" />}
     </Button>
   );
@@ -38,7 +42,7 @@ function SubmitButton() {
 export default function Hero() {
   // 2. Hook up the Server Action
   const [state, formAction] = useActionState(createSnippet, null);
-  
+
   // State for conditional rendering (Protection field)
   const [protection, setProtection] = useState("public");
 
@@ -50,9 +54,8 @@ export default function Hero() {
   }, [state]);
 
   return (
-    <main className="min-h-[85vh] flex flex-col items-center justify-center p-4 md:p-8 bg-background relative overflow-hidden">
-      <div className="w-full max-w-2xl relative z-10">
-        
+    <Container>
+      <div className="w-full relative z-10">
         <div className="text-center mb-8 md:mb-10 space-y-3 md:space-y-4">
           <h1 className="text-4xl sm:text-5xl md:text-6xl font-black tracking-tight text-foreground drop-shadow-[4px_4px_0_var(--shadow-color)]">
             Sh...TEXT
@@ -66,9 +69,10 @@ export default function Hero() {
         <div className="bg-card border-2 border-border p-5 md:p-8 shadow-md">
           {/* 4. Use 'action' instead of 'onSubmit' */}
           <form action={formAction} className="space-y-5 md:space-y-6">
-            
             <div className="space-y-2">
-              <Label htmlFor="text" className="text-base font-bold">Content</Label>
+              <Label htmlFor="text" className="text-base font-bold">
+                Content
+              </Label>
               <Textarea
                 id="text"
                 name="text" // 👈 'name' is required for Server Actions
@@ -79,7 +83,6 @@ export default function Hero() {
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-5 md:gap-6">
-              
               <div className="space-y-2">
                 <Label className="flex items-center gap-2 font-bold">
                   <Hash className="h-4 w-4" /> Custom PIN (Optional)
@@ -156,6 +159,6 @@ export default function Hero() {
           </form>
         </div>
       </div>
-    </main>
+    </Container>
   );
 }

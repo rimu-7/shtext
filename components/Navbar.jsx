@@ -66,7 +66,8 @@ export default function Navbar() {
                 type="text"
                 name="accessCode"
                 placeholder="Enter PIN..."
-className="h-10  flex items-center justify-center border-2 border-black dark:border-white shadow-[4px_4px_0_0_rgba(0,0,0,1)] dark:shadow-[4px_4px_0_0_rgba(255,255,255,1)]  transition-all bg-card"                required
+                className="h-10  flex items-center justify-center border-2 border-black dark:border-white shadow-[4px_4px_0_0_rgba(0,0,0,1)] dark:shadow-[4px_4px_0_0_rgba(255,255,255,1)]  transition-all bg-card"
+                required
               />
               <SearchButton />
             </form>
