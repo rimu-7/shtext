@@ -2,14 +2,14 @@
 
 import { nanoid } from "nanoid";
 import { redirect } from "next/navigation";
-import { headers } from "next/headers"; 
+import { headers } from "next/headers";
 import connectDB from "@/utils/db";
 import Snippet from "@/utils/Snippet";
 import bcrypt from "bcryptjs";
-import { encrypt } from "@/utils/crypto";
+import { encrypt, decrypt } from "@/utils/crypto";
 import { ratelimit } from "@/utils/ratelimit";
 
-// Duration Map
+// Map durations to milliseconds
 const DURATION_MAP = {
   "15m": 15 * 60 * 1000,
   "30m": 30 * 60 * 1000,
@@ -24,23 +24,24 @@ const DURATION_MAP = {
   "forever": null,
 };
 
+// --- 1. CREATE SNIPPET (Server Action) ---
 export async function createSnippet(prevState, formData) {
-  // 1. Rate Limiting (IP Based - No Key Needed for Website)
   const ip = (await headers()).get("x-forwarded-for") || "unknown";
+  
+  // Rate Limit: Prevent spam creation
   const { success: limitSuccess } = await ratelimit.limit(`create_web_${ip}`);
-
   if (!limitSuccess) {
     return { success: false, message: "Too many requests. Please slow down." };
   }
 
-  // 2. Extract Data
+  // Extract Data
   const text = formData.get("text");
   const durationKey = formData.get("duration");
   const customSlug = formData.get("customSlug");
   const protection = formData.get("protection");
   const passwordRaw = formData.get("password");
 
-  // 3. Validation
+  // Validation
   if (!text || typeof text !== "string" || text.trim().length === 0) {
     return { success: false, message: "Content is required." };
   }
@@ -53,7 +54,7 @@ export async function createSnippet(prevState, formData) {
 
   await connectDB();
 
-  // 4. Slug Logic
+  // Slug Logic
   let slug;
   if (customSlug && typeof customSlug === "string" && customSlug.trim() !== "") {
     slug = customSlug.trim().replace(/[^a-zA-Z0-9-_]/g, "");
@@ -68,14 +69,13 @@ export async function createSnippet(prevState, formData) {
     }
   }
 
-  // 5. Password & Encryption
+  // Password & Encryption
   const hashedPassword = (protection === "password" && passwordRaw) 
     ? await bcrypt.hash(passwordRaw, 10) 
     : null;
 
-  const encryptedContent = encrypt(text);
+  const encryptedContent = encrypt(text); // 🔒 Encrypt before saving
 
-  // 6. Save
   try {
     await Snippet.create({
       content: encryptedContent,
@@ -88,48 +88,87 @@ export async function createSnippet(prevState, formData) {
     return { success: false, message: "Database error." };
   }
 
-  // 7. Redirect (This acts as the "Success" response)
   redirect(`/${slug}?new=1`);
 }
 
-// ... existing accessSnippet function ...
+// --- 2. ACCESS SNIPPET (Search Bar Redirect) ---
 export async function accessSnippet(prevState, formData) {
-    // ... keep your existing accessSnippet logic ...
-    // (It's already correct)
-    const ip = (await headers()).get("x-forwarded-for") || "unknown";
-    const { success: limitSuccess } = await ratelimit.limit(`access_action_${ip}`);
-  
-    if (!limitSuccess) {
-      return { success: false, message: "Too many attempts. Please slow down." };
+  const ip = (await headers()).get("x-forwarded-for") || "unknown";
+  const { success: limitSuccess } = await ratelimit.limit(`access_web_${ip}`);
+
+  if (!limitSuccess) {
+    return { success: false, message: "Too many attempts. Please slow down." };
+  }
+
+  const code = formData.get("accessCode");
+
+  if (!code || typeof code !== "string" || code.trim() === "") {
+    return { success: false, message: "Please enter a valid PIN or Code." };
+  }
+
+  const cleanCode = code.trim();
+
+  try {
+    await connectDB();
+    const snippet = await Snippet.findOne({ slug: cleanCode }).lean();
+
+    if (!snippet) {
+      return { success: false, message: "Snippet not found." };
     }
-  
-    const code = formData.get("accessCode");
-  
-    if (!code || typeof code !== "string" || code.trim() === "") {
-      return { success: false, message: "Please enter a valid PIN or Code." };
+
+    if (snippet.expireAt && new Date(snippet.expireAt) <= new Date()) {
+      return { success: false, message: "Snippet expired." };
     }
+
+    redirect(`/${cleanCode}`);
+  } catch (error) {
+    if (error?.message === "NEXT_REDIRECT") throw error;
+    console.error("Access error:", error);
+    return { success: false, message: "An error occurred." };
+  }
+}
+
+// --- 3. VERIFY & DECRYPT (Secure Password Check) ---
+export async function verifySnippetPassword(slug, password) {
+  const ip = (await headers()).get("x-forwarded-for") || "unknown";
   
-    const cleanCode = code.trim();
-  
-    try {
-      await connectDB();
-      const snippet = await Snippet.findOne({ slug: cleanCode }).lean();
-  
-      if (!snippet) {
-        return { success: false, message: "Snippet not found. Check your PIN." };
-      }
-  
-      // Manual Expiry Check
-      if (snippet.expireAt && new Date(snippet.expireAt) <= new Date()) {
-        // It's expired but mongo hasn't deleted it yet. Treat as gone.
-        return { success: false, message: "Snippet not found or expired." };
-      }
-  
-      // If found, redirect to the page
-      redirect(`/${cleanCode}`);
-    } catch (error) {
-      if (error?.message === "NEXT_REDIRECT") throw error;
-      console.error("Access error:", error);
-      return { success: false, message: "An error occurred. Please try again." };
+  // Rate Limit: Prevent brute-force password guessing
+  const { success: limitSuccess } = await ratelimit.limit(`verify_web_${ip}`);
+  if (!limitSuccess) {
+    return { success: false, message: "Too many attempts. Please slow down." };
+  }
+
+  if (!slug || !password) {
+    return { success: false, message: "Missing credentials." };
+  }
+
+  try {
+    await connectDB();
+    const snippet = await Snippet.findOne({ slug }).lean();
+
+    if (!snippet) {
+      return { success: false, message: "Snippet not found." };
     }
+
+    // Expiry Check
+    if (snippet.expireAt && new Date(snippet.expireAt) <= new Date()) {
+       return { success: false, message: "Snippet expired." };
+    }
+
+    // Verify Password
+    const isMatch = await bcrypt.compare(password, snippet.password);
+    if (!isMatch) {
+       // Anti-timing attack delay
+       await new Promise(r => setTimeout(r, 500));
+       return { success: false, message: "Incorrect password." };
+    }
+
+    // Success: Decrypt and Return
+    const content = decrypt(snippet.content);
+    return { success: true, content };
+
+  } catch (error) {
+    console.error("Verify Action Error:", error);
+    return { success: false, message: "Server error." };
+  }
 }
