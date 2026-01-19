@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { ArrowRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import Container from "@/components/Container";
 
 export const metadata = {
   title: "About | Sh...TEXT",
@@ -9,8 +10,8 @@ export const metadata = {
 
 export default function AboutPage() {
   return (
-    <main className="min-h-screen bg-background flex justify-center py-12 px-4 sm:px-6">
-      <div className="w-full max-w-3xl space-y-12">
+    <Container>
+      <div className="w-full py-5 space-y-12">
         {/* HERO SECTION */}
         <section className="space-y-6 text-center sm:text-left">
           <h1 className="text-4xl sm:text-6xl font-black tracking-tighter uppercase drop-shadow-[4px_4px_0_var(--shadow-color)]">
@@ -83,7 +84,7 @@ export default function AboutPage() {
           </div>
         </section>
       </div>
-    </main>
+    </Container>
   );
 }
 

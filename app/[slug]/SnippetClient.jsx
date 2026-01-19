@@ -80,7 +80,7 @@ export default function SnippetClient({ initialData, slug }) {
   if (isLocked) {
     return (
       <Container>
-        <div className="w-full bg-card border-2 border-black dark:border-white shadow-[8px_8px_0_0_rgba(0,0,0,1)] dark:shadow-[8px_8px_0_0_rgba(255,255,255,1)] p-8 text-center space-y-6">
+        <div className="w-full max-w-md mx-auto bg-card border-2 border-black dark:border-white shadow-[8px_8px_0_0_rgba(0,0,0,1)] dark:shadow-[8px_8px_0_0_rgba(255,255,255,1)] p-8 text-center space-y-6">
           <div className="mx-auto w-16 h-16 bg-accent border-2 border-black dark:border-white flex items-center justify-center shadow-[4px_4px_0_0_rgba(0,0,0,1)] dark:shadow-[4px_4px_0_0_rgba(255,255,255,1)]">
             <Lock className="h-8 w-8 text-foreground" />
           </div>

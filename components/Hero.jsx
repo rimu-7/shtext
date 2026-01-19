@@ -55,7 +55,7 @@ export default function Hero() {
       payload.append("duration", formData.duration);
       payload.append("customSlug", formData.customSlug);
       payload.append("protection", formData.protection);
-      
+
       if (formData.protection === "password") {
         payload.append("password", formData.password);
       }
@@ -236,15 +236,12 @@ export default function Hero() {
               <Button
                 type="submit"
                 disabled={loading}
-                // Height 14 to match inputs
-                className="h-14 w-full px-3 sm:px-4 text-3xl rounded-none border-2 border-black dark:border-white shadow-[4px_4px_0_0_rgba(0,0,0,1)] dark:shadow-[4px_4px_0_0_rgba(255,255,255,1)] hover:shadow-none hover:dark:shadow-none hover:translate-x-[4px] hover:translate-y-[4px] transition-all flex items-center gap-2 font-bold bg-primary text-primary-foreground"
+                className="h-14 w-full px-3 sm:px-4 text-3xl rounded-none border-2 border-black dark:border-white shadow-[4px_4px_0_0_rgba(0,0,0,1)] dark:shadow-[4px_4px_0_0_rgba(255,255,255,1)] hover:shadow-none hover:dark:shadow-none hover:translate-x-[4px] hover:translate-y-[4px] transition-all flex items-center justify-center gap-2 font-bold bg-primary text-primary-foreground"
               >
                 {loading ? (
-                  <Loader2 className="h-10 w-10 animate-spin" />
+                  <Loader2 className="h-8 w-8 animate-spin" />
                 ) : (
-                  <>
-                    Create Snippet 
-                  </>
+                  <>Create Snippet</>
                 )}
               </Button>
             </div>

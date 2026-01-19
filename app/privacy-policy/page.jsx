@@ -43,10 +43,10 @@ export default function PrivacyPolicy() {
           </div>
 
           {/* THE JSON SNIPPET UI */}
-          <div className="md:col-span-2 relative group">
-            <div className="relative bg-[#1e1e1e] border-2 border-black dark:border-white p-6 shadow-[8px_8px_0_0_rgba(0,0,0,1)] dark:shadow-[8px_8px_0_0_rgba(255,255,255,1)] overflow-hidden">
+          <div className="md:col-span-2 relative  group">
+            <div className="relative bg-[#1e1e1e] border-2 border-primary p-6 shadow-[8px_8px_0_0_rgba(0,0,0,1)] dark:shadow-[8px_8px_0_0_rgba(255,255,255,1)] overflow-hidden">
               {/* Fake Terminal Header */}
-              <div className="flex items-center gap-2 mb-4 border-b border-white/20 pb-2">
+              <div className="flex items-center gap-2  mb-4 border-b border-white/20 pb-2">
                 <div className="w-3 h-3 rounded-full bg-red-500" />
                 <div className="w-3 h-3 rounded-full bg-yellow-500" />
                 <div className="w-3 h-3 rounded-full bg-green-500" />
@@ -56,7 +56,7 @@ export default function PrivacyPolicy() {
               </div>
 
               {/* The Code */}
-              <pre className="font-mono text-xs text-green-400 overflow-x-auto custom-scrollbar">
+              <pre className="font-mono text-xs py-2  text-green-400 overflow-x-auto custom-scrollbar">
                 {`{
   "_id": { "$oid": "696e083e..." },
   
