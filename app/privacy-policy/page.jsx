@@ -1,130 +1,139 @@
-import { Shield, EyeOff, Trash2, KeyRound, Terminal, Lock } from "lucide-react";
+import Link from "next/link";
+import { Shield, Eye, Database, Lock, ArrowLeft } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import Container from "@/components/Container";
+
+export const metadata = {
+  title: "Privacy Policy | Sh...TEXT",
+  description: "How we handle (and don't handle) your data.",
+};
 
 export default function PrivacyPolicy() {
   return (
-    <section className="w-full max-w-4xl mx-auto py-16 px-4 sm:px-6">
-      
-      {/* --- Section Header --- */}
-      <div className="text-center mb-12 space-y-4">
-        <h2 className="text-3xl font-bold text-gray-900 tracking-tight">
-          The Safe House Protocol
-        </h2>
-        <p className="text-gray-500 max-w-2xl mx-auto text-lg">
-          We don't just hide your data; we destroy it. Learn how our architecture ensures your secrets remain secrets.
-        </p>
-      </div>
+    <Container className="py-5">
+      <div className="w-full space-y-12">
+        {/* HEADER */}
+        <section className="space-y-6 text-center sm:text-left border-b-2 border-black dark:border-white pb-8">
+          <h1 className="text-4xl sm:text-6xl font-black tracking-tighter uppercase drop-shadow-[4px_4px_0_var(--shadow-color)] dark:drop-shadow-[2px_3px_0_var(--shadow-dark-color)] ">
+            Privacy Policy
+          </h1>
+          <p className="text-lg sm:text-xl font-medium text-muted-foreground font-mono max-w-2xl">
+            We don't want your data. We don't sell your data. We can't even read
+            your data.
+          </p>
+          <p className="text-sm font-bold uppercase tracking-widest text-primary">
+            Last Updated: {new Date().toLocaleDateString()}
+          </p>
+        </section>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-8 items-start">
-        
-        {/* --- Visual: The "Encrypted Code" Representation --- */}
-        <div className="bg-gray-900 rounded-xl p-6 shadow-xl overflow-hidden border border-gray-800 relative group">
-          <div className="flex items-center gap-2 mb-4 border-b border-gray-800 pb-4">
-            <Terminal className="h-5 w-5 text-green-500" />
-            <span className="text-gray-400 text-sm font-mono">system_encryption.log</span>
+        {/* SECTION 1: THE DATA */}
+        <section className="grid grid-cols-1 md:grid-cols-3 gap-8">
+          <div className="md:col-span-1 space-y-4">
+            <h2 className="text-2xl font-black uppercase flex items-center gap-2">
+              <Database className="h-6 w-6" /> What We Store
+            </h2>
+            <p className="font-mono text-sm text-muted-foreground leading-relaxed">
+              When you create a snippet, we create a single document in our
+              MongoDB database.
+              <br />
+              <br />
+              <strong>On the right</strong> is a real example of what a saved
+              snippet looks like in our database.
+            </p>
           </div>
-          
-          <div className="space-y-2 font-mono text-xs sm:text-sm">
-             <div className="flex gap-2">
-                <span className="text-blue-400">INPUT:</span>
-                <span className="text-white">"Project Alpha Launch Codes"</span>
-             </div>
-             <div className="flex gap-2">
-                <span className="text-purple-400">PROCESS:</span>
-                <span className="text-gray-400">Applying bcrypt salt rounds...</span>
-             </div>
-             <div className="flex gap-2">
-                <span className="text-yellow-400">STATUS:</span>
-                <span className="text-green-400">ENCRYPTED</span>
-             </div>
-             
-             {/* The "Hash" Visual */}
-             <div className="mt-4 p-3 bg-gray-950 rounded border border-gray-800 text-gray-500 break-all">
-                <span className="text-gray-600 select-none">$2b$10$</span>
-                <span className="text-green-500 animate-pulse">
-                  J9.8xL5/aB2zR3kM7pQ1vW
+
+          {/* THE JSON SNIPPET UI */}
+          <div className="md:col-span-2 relative group">
+            <div className="relative bg-[#1e1e1e] border-2 border-black dark:border-white p-6 shadow-[8px_8px_0_0_rgba(0,0,0,1)] dark:shadow-[8px_8px_0_0_rgba(255,255,255,1)] overflow-hidden">
+              {/* Fake Terminal Header */}
+              <div className="flex items-center gap-2 mb-4 border-b border-white/20 pb-2">
+                <div className="w-3 h-3 rounded-full bg-red-500" />
+                <div className="w-3 h-3 rounded-full bg-yellow-500" />
+                <div className="w-3 h-3 rounded-full bg-green-500" />
+                <span className="ml-2 text-xs font-mono text-gray-400">
+                  mongodb_viewer.exe
                 </span>
-                <span className="text-gray-600">
-                  ...8xL5/aB2zR3kM7pQ1vW
-                </span>
-             </div>
-             
-             <div className="pt-2 text-gray-500">
-                &gt; Database write confirmed.<br/>
-                &gt; Expiration timer set: <span className="text-red-400">ACTIVE</span>
-             </div>
-          </div>
-
-          {/* Decorative Lock Icon overlay */}
-          <div className="absolute -bottom-6 -right-6 text-gray-800 opacity-20">
-            <Lock className="h-32 w-32" />
-          </div>
-        </div>
-
-        {/* --- Policy Details --- */}
-        <div className="space-y-6">
-          
-          {/* Feature 1 */}
-          <div className="flex gap-4">
-            <div className="flex-shrink-0 mt-1">
-              <div className="h-10 w-10 bg-blue-50 rounded-lg flex items-center justify-center">
-                <Trash2 className="h-5 w-5 text-blue-600" />
               </div>
-            </div>
-            <div>
-              <h3 className="font-semibold text-gray-900">Transient by Design</h3>
-              <p className="text-sm text-gray-500 leading-relaxed mt-1">
-                This is not cloud storage; it is a temporary cache. Once the timer hits zero, a hard-delete command is executed. Your data isn't just "hidden"—it is overwritten and removed from the physical disk.
-              </p>
+
+              {/* The Code */}
+              <pre className="font-mono text-xs text-green-400 overflow-x-auto custom-scrollbar">
+                {`{
+  "_id": { "$oid": "696e083e..." },
+  
+  // 🔒 THIS IS YOUR CONTENT (AES-256 Encrypted)
+  "content": "f11b11586ce03a29d3fa...:08ffc4c84473ea64...",
+  
+  "slug": "PostmanTest01",
+
+  // 🔑 THIS IS YOUR PASSWORD (Bcrypt Hash)
+  "password": "$2b$10$jyiZNRBU51HXS1qQC5lcL...",
+  
+  // ⏳ SELF-DESTRUCT TIMER
+  "expireAt": { "$date": "2026-01-19T11:32:30.573Z" },
+  "createdAt": "2026-01-19T10:32:30.574Z"
+}`}
+              </pre>
             </div>
           </div>
+        </section>
 
-          {/* Feature 2 */}
-          <div className="flex gap-4">
-             <div className="flex-shrink-0 mt-1">
-              <div className="h-10 w-10 bg-purple-50 rounded-lg flex items-center justify-center">
-                <EyeOff className="h-5 w-5 text-purple-600" />
-              </div>
-            </div>
-            <div>
-              <h3 className="font-semibold text-gray-900">Zero-Tracking Policy</h3>
-              <p className="text-sm text-gray-500 leading-relaxed mt-1">
-                We do not log IP addresses, device fingerprints, or location data. There is no analytics dashboard watching you. You are a ghost in our system.
-              </p>
-            </div>
+        {/* SECTION 2: BREAKDOWN */}
+        <section className="space-y-8">
+          <h2 className="text-3xl font-black uppercase border-l-8 border-primary pl-4">
+            The Breakdown
+          </h2>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <PolicyCard icon={<Lock />} title="Encryption">
+              Your text is encrypted using <strong>AES-256-CBC</strong> before
+              it leaves our server. The random string you see in{" "}
+              <code>"content"</code> is unreadable without the secret key.
+            </PolicyCard>
+
+            <PolicyCard icon={<Eye />} title="Passwords">
+              We do not store plain-text passwords. We store a{" "}
+              <strong>Bcrypt Hash</strong> (that scary looking string starting
+              with <code>$2b$10$</code>). We can verify your password matches,
+              but we cannot tell you what it is.
+            </PolicyCard>
+
+            <PolicyCard icon={<Shield />} title="No Analytics">
+              We do not use Google Analytics, Facebook Pixel, or any third-party
+              trackers. We use a simple server-side counter for rate limiting
+              (Upstash) to prevent abuse.
+            </PolicyCard>
+
+            <PolicyCard icon={<Database />} title="Deletion">
+              The <code>expireAt</code> field tells MongoDB when to delete this
+              document. Once that time is reached, the data is permanently
+              erased from the hard drive.
+            </PolicyCard>
           </div>
+        </section>
 
-          {/* Feature 3 */}
-          <div className="flex gap-4">
-             <div className="flex-shrink-0 mt-1">
-              <div className="h-10 w-10 bg-green-50 rounded-lg flex items-center justify-center">
-                <Shield className="h-5 w-5 text-green-600" />
-              </div>
-            </div>
-            <div>
-              <h3 className="font-semibold text-gray-900">Standard Encryption</h3>
-              <p className="text-sm text-gray-500 leading-relaxed mt-1">
-                Passwords are hashed using <strong>bcrypt</strong> with salt rounds. Content is stored securely and separated from the access logic. Without the specific link (or PIN), the data is effectively inaccessible.
-              </p>
-            </div>
-          </div>
-
-          <div className="flex gap-4">
-             <div className="flex-shrink-0 mt-1">
-              <div className="h-10 w-10 bg-orange-50 rounded-lg flex items-center justify-center">
-                <KeyRound className="h-5 w-5 text-orange-600" />
-              </div>
-            </div>
-            <div>
-              <h3 className="font-semibold text-gray-900">Ownership is Yours</h3>
-              <p className="text-sm text-gray-500 leading-relaxed mt-1">
-                You set the rules. You choose the custom PIN, the password, and the exact lifespan. We are simply the vessel.
-              </p>
-            </div>
-          </div>
-
+        {/* BACK BUTTON */}
+        <div className="pt-8 border-t-2 border-black/10 dark:border-white/10 flex justify-center">
+          <Link href="/">
+            <Button className="h-12 px-8 rounded-none border-2 border-black dark:border-white shadow-[4px_4px_0_0_rgba(0,0,0,1)] dark:shadow-[4px_4px_0_0_rgba(255,255,255,1)] hover:translate-x-[2px] hover:translate-y-[2px] hover:shadow-[2px_2px_0_0_rgba(0,0,0,1)] hover:dark:shadow-none transition-all font-bold text-base bg-primary text-primary-foreground">
+              <ArrowLeft className="mr-2 h-4 w-4" /> Back to Home
+            </Button>
+          </Link>
         </div>
       </div>
+    </Container>
+  );
+}
 
-    </section>
+function PolicyCard({ icon, title, children }) {
+  return (
+    <div className="border-2 border-black dark:border-white p-6 bg-card dark:hover:drop-shadow-[4px_4px_0_var(--shadow-dark-color)] hover:drop-shadow-[4px_4px_0_var(--shadow-color)] duration-300   transition-colors">
+      <div className="flex items-center gap-3 mb-3 text-primary">
+        {icon}
+        <h3 className="text-xl font-black uppercase">{title}</h3>
+      </div>
+      <p className="font-mono text-sm text-muted-foreground leading-relaxed">
+        {children}
+      </p>
+    </div>
   );
 }

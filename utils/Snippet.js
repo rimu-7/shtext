@@ -4,21 +4,17 @@ const SnippetSchema = new mongoose.Schema(
   {
     content: { type: String, required: true },
     slug: { type: String, required: true, unique: true, index: true },
-
-    // ✅ IMPORTANT: store bcrypt hash (or null)
     password: { type: String, default: null },
-
-    expireAt: { type: Date, required: true, index: true },
+    
+    // 👇 CHANGED: Removed "index: true" from here to avoid duplicate warning
+    expireAt: { type: Date, default: null }, 
   },
   { timestamps: true }
 );
 
-// TTL index (delete when expireAt time is reached)
+// This handles the indexing AND the self-destruct logic
 SnippetSchema.index({ expireAt: 1 }, { expireAfterSeconds: 0 });
 
-// ✅ DEV SAFETY: if you had old schema loaded without password, delete and re-register
-const Snippet =
-  mongoose.models.Snippet ||
-  mongoose.model("Snippet", SnippetSchema);
+const Snippet = mongoose.models.Snippet || mongoose.model("Snippet", SnippetSchema);
 
 export default Snippet;

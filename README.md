@@ -1,233 +1,230 @@
-# Secure Snippet Share 🔐  
-Share sensitive text securely with optional password protection and automatic expiration.
+# Sh...TEXT — Secure Self-Destructing Notes
 
-This project is a lightweight “pastebin-style” app built with **Next.js App Router** and **MongoDB**. Users can create a text snippet, optionally protect it with a **password**, and set an **expiration time**. After expiration, the snippet is automatically removed via a MongoDB TTL index.
+Sh...TEXT is a production-ready, secure Pastebin alternative. It allows users to share sensitive information (passwords, API keys, confidential notes) via temporary, encrypted links that self-destruct after a set duration.
 
----
-
-## ✨ Features
-
-- ✅ **Create secure snippets** (text only)
-- ✅ **Optional password protection** (bcrypt hash stored in DB)
-- ✅ **Custom PIN / slug** (e.g., `project-alpha`)
-- ✅ **Auto-generated PIN** when no custom value is provided
-- ✅ **Expiration control** (15m, 30m, 1h, 2h, 24h, 7d)
-- ✅ **MongoDB TTL auto-delete** when the timer ends
-- ✅ **Lock screen** for password-protected snippets
-- ✅ **Copy link** (auto-copy after create + manual copy button)
-- ✅ **Anonymous + transient** sharing (no login needed)
-
----
-<img src="public/image.png" alt="Project Preview" />
-<img src="public/image copy.png" alt="Project Preview" />
-<img src="public/image copy 2.png" alt="Project Preview" />
-
-
-## 🧱 Tech Stack
-
-- **Next.js (App Router)**
-- **MongoDB + Mongoose**
-- **TailwindCSS**
-- **bcryptjs**
-- **nanoid**
-- **sonner** (toasts)
-- **lucide-react** (icons)
+Built with Next.js App Router, protected by AES-256 Encryption, and hardened against abuse with Upstash Rate Limiting.
 
 ---
 
-## 📦 Project Structure (Important)
+## Features
+
+*  Self-Destructing: Notes are automatically deleted from the database after expiration (TTL).
+*  Zero-Leak Storage: Content is encrypted with AES-256-CBC before it touches the database. Even the admin cannot read the notes.
+*  Password Protection: Optional bcrypt-hashed password protection for extra security.
+*  Anti-Abuse System: Integrated Upstash Redis rate limiting to prevent brute-force attacks and spam.
+*  API-First Design: Secure API endpoints guarded by `x-api-key` headers for Mobile App integration.
+*  Modern UI: Built with Tailwind CSS, Shadcn UI, and Lucide Icons.
+
+---
+
+## Tech Stack
+
+* Framework: Next.js 14 (App Router, Server Actions)
+* Database: MongoDB (Mongoose ORM)
+* Rate Limiting: Upstash Redis (`@upstash/ratelimit`)
+* Styling: Tailwind CSS
+* Components: Shadcn UI
+* Cryptography: Node.js `crypto` (AES-256) & `bcryptjs`
+
+---
+
+## Getting Started
+
+Follow these steps to run the project locally.
+
+### 1. Clone the Repository
+
+```bash
+git clone https://github.com/rimu-7/shtext.git
+cd sh-text
 
 ```
 
-.
+### 2. Install Dependencies
+
+```bash
+npm install
+
+```
+
+### 3. Environment Setup
+
+Create a `.env` file in the root directory. You need to generate secure keys for this.
+
+Generate Keys (Run in terminal):
+
+```bash
+# Generate Encryption Key (32 bytes / 64 hex chars)
+openssl rand -hex 32
+
+# Generate API Access Keys (16 bytes / 32 hex chars)
+openssl rand -hex 16
+
+```
+
+Paste into `.env`:
+
+```env
+# 1. Database Connection
+MONGODB_URI="mongodb+srv://your_user:your_pass@cluster.mongodb.net/sh-text"
+
+# 2. Upstash Redis (For Rate Limiting)
+# Create a free database at https://console.upstash.com/
+UPSTASH_REDIS_REST_URL="https://your-db.upstash.io"
+UPSTASH_REDIS_REST_TOKEN="your_upstash_token"
+
+# 3. Security (AES-256 Encryption) - MUST be 64 characters long
+ENCRYPTION_KEY="paste_your_generated_64_char_key_here"
+
+# 4. API Authorization
+# Comma-separated list of keys allowed to access the API (e.g. one for Web, one for Android)
+API_SECRET_KEYS="web-key-12345,android-key-67890"
+
+# 5. Frontend Access
+# Must match one of the keys above so the website can talk to the API
+NEXT_PUBLIC_WEB_API_KEY="web-key-12345"
+
+```
+
+### 4. Run the Server
+
+```bash
+npm run dev
+
+```
+
+Open [http://localhost:3000](https://www.google.com/search?q=http://localhost:3000) with your browser.
+
+---
+
+## Security Architecture
+
+This project implements a multi-layered security approach:
+
+1. Transport Layer: All data relies on HTTPS (Standard Vercel deployment).
+2. Access Layer:
+* API Keys: Routes are protected by a whitelist of API keys.
+* Rate Limiting: IP and Key-based throttling prevents bot attacks (10 req/10s).
+
+
+3. Application Layer:
+* Passwords: Hashed using `bcrypt` (work factor 10). Plain text passwords are never stored.
+
+
+4. Data Layer:
+* Encryption: Content is encrypted using `AES-256-CBC` with a unique Initialization Vector (IV) for every record.
+* TTL: MongoDB handles automatic deletion of expired records.
+
+
+
+---
+
+## API Documentation
+
+This backend is designed to serve both the web frontend and mobile apps.
+
+Base URL: `https://your-domain.com`
+
+### Headers Required
+
+All requests must include the API Key header:
+| Header | Value | Description |
+| :--- | :--- | :--- |
+| `Content-Type` | `application/json` | Standard JSON payload |
+| `x-api-key` | `your_secret_key` | From `.env` allowed list |
+
+### 1. Create Snippet
+
+POST `/api/snippet/create`
+
+Body:
+
+```json
+{
+  "text": "Secret content here...",
+  "duration": "1h",          // Options: 15m, 30m, 1h, 2h, 6h, 12h, 24h, 7d
+  "customSlug": "my-pin",    // Optional: Custom URL ending
+  "password": "secret_pass"  // Optional: Password protection
+}
+
+```
+
+Response (200 OK):
+
+```json
+{
+  "success": true,
+  "slug": "my-pin"
+}
+
+```
+
+### 2. Verify & Retrieve Snippet
+
+POST `/api/snippet/verify`
+
+Body:
+
+```json
+{
+  "slug": "my-pin",
+  "password": "secret_pass" // Required if snippet is protected
+}
+
+```
+
+Response (200 OK):
+
+```json
+{
+  "success": true,
+  "content": "Secret content here..."
+}
+
+```
+
+---
+
+## Project Structure
+
+```bash
 ├── app
 │   ├── [slug]
 │   │   ├── page.jsx
 │   │   └── SnippetClient.jsx
 │   ├── api
 │   │   └── snippet
+│   │       ├── create
 │   │       └── verify
 │   ├── favicon.ico
 │   ├── globals.css
 │   ├── layout.js
 │   ├── page.js
-│   └── privacy-policy
-│       └── page.jsx
 ├── components
 │   ├── Footer.jsx
 │   ├── Hero.jsx
-│   └── Navbar.jsx
-├── eslint.config.mjs
-├── jsconfig.json
-├── next.config.mjs
-├── package.json
-├── pnpm-lock.yaml
-├── pnpm-workspace.yaml
-├── postcss.config.mjs
-├── public
-│   ├── file.svg
-│   ├── globe.svg
-│   ├── next.svg
-│   ├── vercel.svg
-│   └── window.svg
-├── README.md
+│   ├── ModeToggle.jsx
+│   ├── Navbar.jsx
+│   ├── theme-provider.jsx
 └── utils
     ├── action.js
+    ├── auth.js
+    ├── crypto.js
     ├── db.js
+    ├── ratelimit.js
+    ├── Session.js
     └── Snippet.js
 
-10 directories, 26 files
-
-````
-
-✅ API routes must live under: `app/api/...`  
-If you place them elsewhere (e.g., under `privacy-policy`), Next.js will return **404**.
-
----
-
-## ⚙️ Environment Variables
-
-Create a `.env.local` file in the project root:
-
-```env
-MONGODB_URI="your_mongodb_connection_string"
-````
-
-Example:
-
-```env
-MONGODB_URI="mongodb+srv://username:password@cluster.mongodb.net/snippetdb?retryWrites=true&w=majority"
 ```
 
 ---
 
-## 🚀 Getting Started
+## Contributing
 
-### 1) Install dependencies
+Contributions are welcome!
 
-Using pnpm:
-
-```bash
-pnpm install
-```
-
-Or npm:
-
-```bash
-npm install
-```
-
-### 2) Run the dev server
-
-```bash
-pnpm dev
-# or
-npm run dev
-```
-
-Open:
-
-* `http://localhost:3000`
-
----
-
-## 🔐 How Password Protection Works
-
-When creating a snippet, users can choose:
-
-* **Public** → anyone with the link can read it
-* **Password Protected** → a password is required to unlock
-
-### Important Security Notes
-
-* Passwords are **never stored in plain text**
-* The DB stores a **bcrypt hash** in the `password` field
-* When someone tries to unlock, the client sends:
-
-  * `slug`
-  * `password`
-    to `/api/snippet/verify`
-* The server compares using bcrypt and returns the snippet content only on success
-
----
-
-## ⏳ Expiration & Auto-Deletion
-
-Each snippet has an `expireAt` field. A MongoDB TTL index deletes the document when it expires:
-
-```js
-SnippetSchema.index({ expireAt: 1 }, { expireAfterSeconds: 0 });
-```
-
-✅ Even if MongoDB takes some time to physically delete the record, the app also checks `expireAt` before returning content and treats expired snippets as **not found**.
-
----
-
-## ✅ API Endpoint
-
-### Verify snippet password
-
-**POST** `/api/snippet/verify`
-
-Request body:
-
-```json
-{
-  "slug": "yourSnippetSlug",
-  "password": "yourPassword"
-}
-```
-
-Response (success):
-
-```json
-{
-  "success": true,
-  "content": "secret text..."
-}
-```
-
-Response (wrong password):
-
-```json
-{
-  "success": false,
-  "message": "Incorrect password."
-}
-```
-
----
-
-## 🧪 Testing Checklist
-
-1. Create a snippet as **Public**
-
-   * Open link in another browser ✅ should show content
-
-2. Create a snippet as **Password Protected**
-
-   * Open link in another browser ✅ should ask for password
-   * Enter wrong password ✅ should show error
-   * Enter correct password ✅ should unlock
-
-3. Test expiration
-
-   * Create a snippet with 15 minutes
-   * After expiration ✅ should be treated as not found
-
----
-
-
-## 📄 License
-
-MIT — feel free to use and modify.
-
----
-
-## 👤 Author
-
-Built by **Rimu / Mutasim**
-
-```
-rimubhai.com
-```
+1. Fork the Project.
+2. Create your Feature Branch (`git checkout -b feature/AmazingFeature`).
+3. Commit your Changes (`git commit -m 'Add some AmazingFeature'`).
+4. Push to the Branch (`git push origin feature/AmazingFeature`).
+5. Open a Pull Request.
