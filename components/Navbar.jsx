@@ -2,11 +2,12 @@
 
 import Link from "next/link";
 import { ShieldCheck, Plus, Search, Loader2 } from "lucide-react";
-import { useActionState, useEffect } from "react";
+import { useActionState, useEffect, useState } from "react";
 import { useFormStatus } from "react-dom";
-import { toast } from "sonner";
+import { toast } from "next-toast";
 import { ModeToggle } from "./ModeToggle";
 import { accessSnippet } from "@/utils/action";
+import RateLimitAlert from "./RateLimitAlert";
 
 // Shadcn imports
 import { Button } from "@/components/ui/button";
@@ -36,9 +37,15 @@ function SearchButton() {
 export default function Navbar() {
   // ✅ Connected the server action
   const [state, action] = useActionState(accessSnippet, null);
+  const [resetTime, setResetTime] = useState(null);
 
   useEffect(() => {
-    if (state && !state.success) toast.error(state.message);
+    if (state && !state.success) {
+      if (state.reset) {
+        setResetTime(state.reset);
+      }
+      toast.error(state.message);
+    }
   }, [state]);
 
   return (
@@ -51,7 +58,7 @@ export default function Navbar() {
             className="group flex items-center gap-2 transition-transform active:scale-95 shrink-0"
           >
             <div className="p-1.5 bg-primary border-2 border-black dark:border-white shadow-[2px_2px_0_0_rgba(0,0,0,1)] dark:shadow-[2px_2px_0_0_rgba(255,255,255,1)] group-hover:shadow-none group-hover:dark:shadow-none group-hover:translate-x-[2px] group-hover:translate-y-[2px] transition-all">
-              <ShieldCheck className="h-5 w-5 text-primary-foreground" />
+              <ShieldCheck className="h-5 w-5" />
             </div>
             {/* Hidden on very small phones to make room for search */}
             <span className="font-black hover:text-primary hover:drop-shadow-[2px_3px_0_var(--shadow-color)]  dark:hover:drop-shadow-[2px_3px_0_var(--shadow-dark-color)]  text-4xl tracking-tight hidden sm:block">
@@ -60,7 +67,7 @@ export default function Navbar() {
           </Link>
 
           {/* --- Search Bar --- */}
-          <div className="flex-1 max-w-sm mx-2 sm:mx-4">
+          <div className="flex-1 max-w-sm mx-2 sm:mx-4 relative">
             <form action={action} className="flex w-full relative group">
               <Input
                 type="text"
@@ -71,6 +78,12 @@ export default function Navbar() {
               />
               <SearchButton />
             </form>
+            {/* RATE LIMIT ALERT */}
+            {resetTime > 0 && (
+              <div className="absolute top-12 left-0 w-full z-50">
+                <RateLimitAlert resetTime={resetTime} onExpire={() => setResetTime(null)} />
+              </div>
+            )}
           </div>
 
           {/* --- Right Actions (Responsive) --- */}

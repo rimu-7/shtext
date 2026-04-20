@@ -18,7 +18,7 @@ export default function PrivacyPolicy() {
             Privacy Policy
           </h1>
           <p className="text-lg sm:text-xl font-medium text-muted-foreground font-mono max-w-2xl">
-            We don't want your data. We don't sell your data. We can't even read
+            We don&apos;t want your data. We don&apos;t sell your data. We can&apos;t even read
             your data.
           </p>
           <p className="text-sm font-bold uppercase tracking-widest text-primary">
@@ -87,7 +87,7 @@ export default function PrivacyPolicy() {
             <PolicyCard icon={<Lock />} title="Encryption">
               Your text is encrypted using <strong>AES-256-CBC</strong> before
               it leaves our server. The random string you see in{" "}
-              <code>"content"</code> is unreadable without the secret key.
+              <code>&quot;content&quot;</code> is unreadable without the secret key.
             </PolicyCard>
 
             <PolicyCard icon={<Eye />} title="Passwords">

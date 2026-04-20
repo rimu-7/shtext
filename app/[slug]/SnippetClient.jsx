@@ -2,13 +2,14 @@
 
 import { useEffect, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
-import { toast } from "sonner";
+import { toast } from "next-toast";
 import { Lock, Copy, Check, Clock, Unlock } from "lucide-react";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { verifySnippetPassword } from "@/utils/action";
 import Container from "@/components/Container";
+import RateLimitAlert from "@/components/RateLimitAlert";
 
 export default function SnippetClient({ initialData, slug }) {
   const router = useRouter();
@@ -21,19 +22,50 @@ export default function SnippetClient({ initialData, slug }) {
   const [loading, setLoading] = useState(false);
   const [copied, setCopied] = useState(false);
 
+  const [resetTime, setResetTime] = useState(null);
+
   // Auto-copy link effect
   useEffect(() => {
+    if (typeof window === "undefined") return;
     const isNew = searchParams?.get("new") === "1";
     if (!isNew) return;
 
     const cleanUrl = `${window.location.origin}/${slug}`;
-    navigator.clipboard
-      .writeText(cleanUrl)
-      .then(() => toast.success("Link copied"))
-      .catch(() => toast.message("Link ready"));
 
-    router.replace(`/${slug}`, { scroll: false });
-  }, [searchParams, slug, router]);
+    let ignore = false;
+
+    async function copyAndReplace() {
+      try {
+        await navigator.clipboard.writeText(cleanUrl);
+        if (!ignore) toast.success("Link copied");
+      } catch {
+        // Fallback for browsers without navigator.clipboard
+        try {
+          const textarea = document.createElement("textarea");
+          textarea.value = cleanUrl;
+          textarea.style.position = "fixed"; // avoid scrolling to bottom
+          document.body.appendChild(textarea);
+          textarea.select();
+          document.execCommand("copy");
+          document.body.removeChild(textarea);
+          if (!ignore) toast.success("Link copied");
+        } catch {
+          if (!ignore) toast.error("Failed to copy — press Ctrl+C to copy");
+        }
+      } finally {
+        if (!ignore) {
+          window.history.replaceState(null, "", "/" + slug);
+        }
+      }
+    }
+
+    copyAndReplace();
+
+    // optional cleanup if needed
+    return () => {
+      ignore = true;
+    };
+  }, [searchParams, slug]);
 
   // Unlock Function (Updated to use Server Action)
   const handleUnlock = async (e) => {
@@ -45,6 +77,9 @@ export default function SnippetClient({ initialData, slug }) {
       const result = await verifySnippetPassword(slug, passwordInput.trim());
 
       if (!result.success) {
+        if (result.reset) {
+          setResetTime(result.reset);
+        }
         toast.error(result.message || "Incorrect password.");
         setLoading(false);
         return;
@@ -101,13 +136,16 @@ export default function SnippetClient({ initialData, slug }) {
               placeholder="Enter password"
               className="h-12 border-2 border-black dark:border-white focus-visible:ring-0 shadow-[4px_4px_0_0_rgba(0,0,0,1)] dark:shadow-[4px_4px_0_0_rgba(255,255,255,1)]"
             />
-            <Button
-              type="submit"
-              disabled={loading}
-              className="w-full h-12 font-bold bg-primary text-primary-foreground border-2 border-black dark:border-white shadow-[4px_4px_0_0_rgba(0,0,0,1)] dark:shadow-[4px_4px_0_0_rgba(255,255,255,1)] hover:translate-x-[2px] hover:translate-y-[2px] hover:shadow-[2px_2px_0_0_rgba(0,0,0,1)] hover:dark:shadow-none transition-all"
-            >
-              {loading ? "Verifying..." : "Unlock Snippet"}
-            </Button>
+            {resetTime > 0 && <RateLimitAlert resetTime={resetTime} onExpire={() => setResetTime(null)} />}
+            {!resetTime && (
+              <Button
+                type="submit"
+                disabled={loading}
+                className="w-full h-12 font-bold bg-primary text-primary-foreground border-2 border-black dark:border-white shadow-[4px_4px_0_0_rgba(0,0,0,1)] dark:shadow-[4px_4px_0_0_rgba(255,255,255,1)] hover:translate-x-[2px] hover:translate-y-[2px] hover:shadow-[2px_2px_0_0_rgba(0,0,0,1)] hover:dark:shadow-none transition-all"
+              >
+                {loading ? "Verifying..." : "Unlock Snippet"}
+              </Button>
+            )}
           </form>
         </div>
       </Container>

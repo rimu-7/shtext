@@ -29,9 +29,9 @@ export async function createSnippet(prevState, formData) {
   const ip = (await headers()).get("x-forwarded-for") || "unknown";
   
   // Rate Limit: Prevent spam creation
-  const { success: limitSuccess } = await ratelimit.limit(`create_web_${ip}`);
+  const { success: limitSuccess, reset } = await ratelimit.limit(`create_web_${ip}`);
   if (!limitSuccess) {
-    return { success: false, message: "Too many requests. Please slow down." };
+    return { success: false, message: "Too many requests. Please slow down.", reset };
   }
 
   // Extract Data
@@ -55,18 +55,11 @@ export async function createSnippet(prevState, formData) {
   await connectDB();
 
   // Slug Logic
-  let slug;
-  if (customSlug && typeof customSlug === "string" && customSlug.trim() !== "") {
-    slug = customSlug.trim().replace(/[^a-zA-Z0-9-_]/g, "");
+  let slug = customSlug?.trim().replace(/[^a-zA-Z0-9-_]/g, "");
+
+  if (slug) {
     const existing = await Snippet.findOne({ slug }).lean();
     if (existing) return { success: false, message: "Custom PIN is already taken." };
-  } else {
-    let isUnique = false;
-    while (!isUnique) {
-      slug = nanoid(6);
-      const check = await Snippet.findOne({ slug });
-      if (!check) isUnique = true;
-    }
   }
 
   // Password & Encryption
@@ -76,16 +69,38 @@ export async function createSnippet(prevState, formData) {
 
   const encryptedContent = encrypt(text); // 🔒 Encrypt before saving
 
-  try {
-    await Snippet.create({
-      content: encryptedContent,
-      slug,
-      password: hashedPassword,
-      expireAt,
-    });
-  } catch (error) {
-    console.error("DB Error:", error);
-    return { success: false, message: "Database error." };
+  let created = false;
+  let attempts = 0;
+
+  while (!created && attempts < 3) {
+    if (!slug) {
+      slug = nanoid(6);
+    }
+    
+    try {
+      await Snippet.create({
+        content: encryptedContent,
+        slug,
+        password: hashedPassword,
+        expireAt,
+      });
+      created = true;
+    } catch (error) {
+      if (error.code === 11000 && !customSlug) {
+        // Automatic slug collision, retry
+        slug = null; // Important to wipe it so the next loop run regenerates it
+        attempts++;
+      } else if (error.code === 11000 && customSlug) {
+        return { success: false, message: "Custom PIN is already taken." };
+      } else {
+        console.error("DB Error:", error);
+        return { success: false, message: "Database error." };
+      }
+    }
+  }
+
+  if (!created) {
+    return { success: false, message: "Failed to generate a unique link. Please try again." };
   }
 
   redirect(`/${slug}?new=1`);
@@ -94,10 +109,10 @@ export async function createSnippet(prevState, formData) {
 // --- 2. ACCESS SNIPPET (Search Bar Redirect) ---
 export async function accessSnippet(prevState, formData) {
   const ip = (await headers()).get("x-forwarded-for") || "unknown";
-  const { success: limitSuccess } = await ratelimit.limit(`access_web_${ip}`);
+  const { success: limitSuccess, reset } = await ratelimit.limit(`access_web_${ip}`);
 
   if (!limitSuccess) {
-    return { success: false, message: "Too many attempts. Please slow down." };
+    return { success: false, message: "Too many attempts. Please slow down.", reset };
   }
 
   const code = formData.get("accessCode");
@@ -133,9 +148,9 @@ export async function verifySnippetPassword(slug, password) {
   const ip = (await headers()).get("x-forwarded-for") || "unknown";
   
   // Rate Limit: Prevent brute-force password guessing
-  const { success: limitSuccess } = await ratelimit.limit(`verify_web_${ip}`);
+  const { success: limitSuccess, reset } = await ratelimit.limit(`verify_web_${ip}`);
   if (!limitSuccess) {
-    return { success: false, message: "Too many attempts. Please slow down." };
+    return { success: false, message: "Too many attempts. Please slow down.", reset };
   }
 
   if (!slug || !password) {

@@ -1,10 +1,11 @@
 import { Domine, DM_Sans, Space_Mono } from "next/font/google";
 import "./globals.css";
-import { Toaster } from "sonner";
+
 import Footer from "@/components/Footer";
 import Navbar from "@/components/Navbar";
 import { ThemeProvider } from "@/components/theme-provider";
 import Script from "next/script";
+import { NextToast } from "next-toast";
 
 // Serif Font
 const domine = Domine({
@@ -156,14 +157,10 @@ export default function RootLayout({ children }) {
           <div className="flex flex-col min-h-screen">
             <Navbar />
             <div className="flex-1">{children}</div>
-            <Toaster
+            <NextToast
               position="top-center"
-              richColors
-              closeButton
-              className="font-sans"
-              toastOptions={{
-                className: "border-2 border-black shadow-sm",
-              }}
+              richColors={true}
+              closeButton={true}
             />
             <Footer />
           </div>

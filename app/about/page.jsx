@@ -29,7 +29,7 @@ export default function AboutPage() {
         <section className="grid grid-cols-1 md:grid-cols-2 gap-6">
           <InfoCard title="Zero Knowledge">
             We encrypt your data <strong>before</strong> it enters our database.
-            Even if we wanted to read your notes, we can't. The decryption
+            Even if we wanted to read your notes, we can&apos;t. The decryption
             happens only when the intended recipient opens the link.
           </InfoCard>
 

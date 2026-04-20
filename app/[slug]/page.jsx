@@ -1,47 +1,54 @@
-import connectDB from "@/utils/db";
-import Snippet from "@/utils/Snippet";
 import SnippetClient from "./SnippetClient";
-import { decrypt } from "@/utils/crypto"; // 👈 New import
+import RateLimitAlert from "@/components/RateLimitAlert";
 import Link from "next/link";
 import { ArrowLeft, FileQuestion } from "lucide-react";
+
+import { headers } from "next/headers";
 
 export const dynamic = "force-dynamic";
 
 async function getSnippet(slug) {
-  await connectDB();
-  const snippet = await Snippet.findOne({ slug }).lean();
+  try {
+    // We must use absolute URLs for server-side fetching
+    const headersList = await headers();
+    const host = headersList.get("host") || "localhost:3000";
+    const protocol = host.includes("localhost") ? "http" : "https";
+    
+    // Fetch from the newly created decoupled API Endpoint
+    const res = await fetch(`${protocol}://${host}/api/snippet/${slug}`, {
+      cache: "no-store", // Ensure we always get fresh data
+    });
+    if (!res.ok) {
+      if (res.status === 429) {
+        const body = await res.json().catch(() => ({}));
+        return { rateLimited: true, reset: body.reset };
+      }
+      return null;
+    }
 
-  if (!snippet) return null;
+    const { data, success } = await res.json();
+    if (!success || !data) return null;
 
-  // Manual Expiry Check (Safety)
-  if (snippet.expireAt && new Date(snippet.expireAt) <= new Date()) {
-    await Snippet.deleteOne({ _id: snippet._id }).catch(() => {});
+    return data;
+  } catch (error) {
+    console.error("Failed to fetch snippet via API:", error);
     return null;
   }
-
-  const isProtected = !!snippet.password;
-  let content = null;
-
-  // If public, we decrypt on the server to show immediately
-  if (!isProtected) {
-    try {
-      content = decrypt(snippet.content);
-    } catch (e) {
-      console.error("Decryption error on server:", e);
-      content = "Error: Could not decrypt content.";
-    }
-  }
-
-  return {
-    isProtected,
-    expireAt: snippet.expireAt ? new Date(snippet.expireAt).toISOString() : "Never",
-    content, // Will be null if protected, or string if public
-  };
 }
 
 export default async function ViewSnippet({ params }) {
   const { slug } = await params;
   const data = await getSnippet(slug);
+
+  if (data?.rateLimited) {
+    return (
+      <main className="min-h-screen bg-background flex flex-col items-center pt-12 sm:pt-20 p-4 pb-20">
+        <div className="w-full max-w-md border-2 border-black shadow-[8px_8px_0_0_rgba(0,0,0,1)] bg-card p-6">
+          <RateLimitAlert resetTime={data.reset} />
+        </div>
+      </main>
+    );
+  }
 
   // 404 View
   if (!data) {

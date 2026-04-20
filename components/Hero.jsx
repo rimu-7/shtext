@@ -2,8 +2,8 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { toast } from "sonner";
-import { createSnippet } from "@/utils/action"; // 👈 Import the Server Action
+import { toast } from "next-toast";
+import { createSnippet } from "@/utils/action";
 import {
   Loader2,
   Lock,
@@ -27,10 +27,12 @@ import {
 } from "@/components/ui/select";
 import { Label } from "@/components/ui/label";
 import Container from "./Container";
+import RateLimitAlert from "./RateLimitAlert";
 
 export default function Hero() {
   const router = useRouter();
   const [loading, setLoading] = useState(false);
+  const [resetTime, setResetTime] = useState(null);
   const [formData, setFormData] = useState({
     text: "",
     customSlug: "",
@@ -231,20 +233,29 @@ export default function Hero() {
               )}
             </div>
 
+            {/* RATE LIMIT ALERT */}
+            {resetTime > 0 && (
+              <div className="pt-4">
+                <RateLimitAlert resetTime={resetTime} onExpire={() => setResetTime(null)} />
+              </div>
+            )}
+
             {/* SUBMIT BUTTON */}
-            <div className="pt-4">
-              <Button
-                type="submit"
-                disabled={loading}
-                className="h-14 w-full px-3 sm:px-4 text-3xl rounded-none border-2 border-black dark:border-white shadow-[4px_4px_0_0_rgba(0,0,0,1)] dark:shadow-[4px_4px_0_0_rgba(255,255,255,1)] hover:shadow-none hover:dark:shadow-none hover:translate-x-[4px] hover:translate-y-[4px] transition-all flex items-center justify-center gap-2 font-bold bg-primary text-primary-foreground"
-              >
-                {loading ? (
-                  <Loader2 className="h-8 w-8 animate-spin" />
-                ) : (
-                  <>Create Snippet</>
-                )}
-              </Button>
-            </div>
+            {!resetTime && (
+              <div className="pt-4">
+                <Button
+                  type="submit"
+                  disabled={loading}
+                  className="h-14 w-full px-3 sm:px-4 text-3xl rounded-none border-2 border-black dark:border-white shadow-[4px_4px_0_0_rgba(0,0,0,1)] dark:shadow-[4px_4px_0_0_rgba(255,255,255,1)] hover:shadow-none hover:dark:shadow-none hover:translate-x-[4px] hover:translate-y-[4px] transition-all flex items-center justify-center gap-2 font-bold bg-primary text-primary-foreground"
+                >
+                  {loading ? (
+                    <Loader2 className="h-8 w-8 animate-spin" />
+                  ) : (
+                    <>Create Snippet</>
+                  )}
+                </Button>
+              </div>
+            )}
           </form>
         </div>
       </div>
